@@ -874,6 +874,31 @@ sub start_slave {
   return 0;
 }
 
+#############################################################
+###################### edit 25.06.12 ########################
+
+sub start_slave_mysql {
+  my $self = shift;
+  my $log  = shift;
+  $log = $self->{logger} unless ($log);
+  my $dbhelper = $self->{dbhelper};
+  my ($sstatus) = ();
+  $log->debug(
+    sprintf( " Starting slave IO/SQL thread on %s..", $self->get_hostinfo() ) );
+  $dbhelper->start_slave_mysql($self->{repl_user}, $self->{repl_password});
+  if ( $self->wait_until_slave_starts( 'ALL', $log ) ) {
+    $log->error(
+      sprintf( "Starting slave IO/SQL thread on %s failed!",
+        $self->get_hostinfo() )
+    );
+    return 1;
+  }
+  $log->debug("  done.");
+  return 0;
+}
+
+############################################################
+
 sub stop_io_thread {
   my $self = shift;
   my $log  = shift;

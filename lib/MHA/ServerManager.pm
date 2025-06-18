@@ -1341,11 +1341,22 @@ sub change_master_and_start_slave {
       $target->{use_ip_for_change_master}
     ? $master->{ip}
     : $master->{hostname};
+    
+#############################################################
+###################### edit 25.06.12 ########################
+# $target->{is_mariadb} --> $dbhelper->{is_mariadb}
 
-  if ( $self->is_gtid_auto_pos_enabled() && !$target->{is_mariadb} ) {
-    $dbhelper->change_master_gtid( $addr, $master->{port},
+  if ( $self->is_gtid_auto_pos_enabled() && !$dbhelper->{is_mariadb} ) {
+      $dbhelper->change_master_gtid( $addr, $master->{port},
       $master->{repl_user}, $master->{repl_password} );
   }
+
+  elsif ( !$self->is_gtid_auto_pos_enabled() && !$dbhelper->{is_mariadb} ) {
+      $dbhelper->change_master( $addr,
+      $master->{port}, $master_log_file, $master_log_pos, $master->{repl_user} );
+
+#############################################################
+  
   else {
     $dbhelper->change_master( $addr,
       $master->{port}, $master_log_file, $master_log_pos, $master->{repl_user},
@@ -1360,12 +1371,32 @@ sub change_master_and_start_slave {
       $target->disable_relay_log_purge();
     }
   }
-  my $ret = $target->start_slave($log);
+#############################################################
+###################### edit 25.06.12 ########################
+  my ($start_method, @start_args, $success_msg);
+
+  if ( !$dbhelper->{is_mariadb} ) {
+    $start_method = 'start_slave_mysql';
+    @start_args   = ($log, $target->{repl_user}, $target->{repl_password});
+    $success_msg  = " Slave started in MySQL.";
+    }
+  else {
+    $start_method = 'start_slave';
+    @start_args   = ($log);
+    $success_msg  = " Slave started in MariaDB.";
+    }
+
+  my $ret = $target->$start_method(@start_args);
+
   unless ($ret) {
-    $log->info(" Slave started.");
+    $log->info($success_msg);
   }
+
   return $ret;
+
 }
+#############################################################
+
 
 sub get_current_alive_master($) {
   my $self   = shift;

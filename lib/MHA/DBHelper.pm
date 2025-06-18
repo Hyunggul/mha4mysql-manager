@@ -87,6 +87,11 @@ use constant Show_Master_Status_SQL => "SHOW MASTER STATUS";
 use constant Stop_IO_Thread_SQL     => "STOP SLAVE IO_THREAD";
 use constant Start_IO_Thread_SQL    => "START SLAVE IO_THREAD";
 use constant Start_Slave_SQL        => "START SLAVE";
+
+###################### edit 25.06.12 ########################
+use constant Start_Slave_SQL_MYSQL  => "START SLAVE USER='%s' PASSWORD='%s'";
+#############################################################
+
 use constant Stop_Slave_SQL         => "STOP SLAVE";
 use constant Start_SQL_Thread_SQL   => "START SLAVE SQL_THREAD";
 use constant Stop_SQL_Thread_SQL    => "STOP SLAVE SQL_THREAD";
@@ -539,6 +544,18 @@ sub start_slave() {
   my $self = shift;
   return $self->execute(Start_Slave_SQL);
 }
+
+#############################################################
+###################### edit 25.06.12 ########################
+
+sub start_slave_mysql() {
+  my $self = shift;
+  my $repl_user = shift;
+  my $repl_password = shift;
+  my $query = sprintf(Start_Slave_SQL_MYSQL, $repl_user, $repl_password);
+  return $self->execute($query);
+}
+#############################################################
 
 sub start_sql_thread() {
   my $self = shift;
